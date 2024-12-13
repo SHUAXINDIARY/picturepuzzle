@@ -1,14 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef } from "react";
 
-const Drawer = (props: { onSave?: (Files: File[]) => void }) => {
-  const [FileList, setFileList] = useState<File[]>([]);
+const Drawer = (props: {
+  FileList?: File[];
+  onSave?: (Files?: File[]) => void;
+}) => {
   const FileRef = useRef(null);
-  useEffect(() => {
-    if (FileRef.current) {
-      // @ts-ignore
-      FileRef.current.value = "";
-    }
-  }, [FileList]);
+
   return (
     <div className="drawer">
       <input id="my-drawer" type="checkbox" className="drawer-toggle" />
@@ -28,12 +25,9 @@ const Drawer = (props: { onSave?: (Files: File[]) => void }) => {
             <input
               ref={FileRef}
               onChange={(e) => {
-                e.target.files &&
-                  setFileList((old) => {
-                    return e.target.files?.[0]
-                      ? [...old, ...e.target.files]
-                      : old;
-                  });
+                e.target.files && props?.onSave?.([...e.target.files]);
+                // @ts-ignore
+                if (FileRef.current) FileRef.current.value = "";
               }}
               type="file"
               multiple
@@ -44,13 +38,13 @@ const Drawer = (props: { onSave?: (Files: File[]) => void }) => {
             <div
               className="btn"
               onClick={() => {
-                props?.onSave?.(FileList);
+                props?.onSave?.();
               }}
             >
               生成
             </div>
           </li>
-          {FileList.map((item) => {
+          {props.FileList!.map((item) => {
             const url = URL.createObjectURL(item);
             return (
               <li key={url} className="m-2">
