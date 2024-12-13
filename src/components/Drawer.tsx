@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-const Drawer = () => {
+const Drawer = (props: { onSave?: (Files: File[]) => void }) => {
   const [FileList, setFileList] = useState<File[]>([]);
   const FileRef = useRef(null);
   useEffect(() => {
@@ -28,19 +28,27 @@ const Drawer = () => {
             <input
               ref={FileRef}
               onChange={(e) => {
-                e.target.files?.[0] &&
+                e.target.files &&
                   setFileList((old) => {
                     return e.target.files?.[0]
-                      ? [...old, e.target.files?.[0]]
+                      ? [...old, ...e.target.files]
                       : old;
                   });
               }}
               type="file"
+              multiple
               className="file-input file-input-ghost w-full max-w-xs"
             />
           </li>
           <li className="m-2 inline-flex justify-between">
-            <div className="btn">生成</div>
+            <div
+              className="btn"
+              onClick={() => {
+                props?.onSave?.(FileList);
+              }}
+            >
+              生成
+            </div>
           </li>
           {FileList.map((item) => {
             const url = URL.createObjectURL(item);
