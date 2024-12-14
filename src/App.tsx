@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import Drawer from "./components/Drawer.tsx";
+// @ts-ignore
 import "./libary/packery.js";
-import Drawer from "./components/Drawer.js";
 
 function App() {
   const imgContainer = useRef(null);
@@ -17,7 +18,7 @@ function App() {
       }, 1000);
     }
   }, [ImgData]);
-  
+
   const handleSave = useCallback((files?: File[]) => {
     files && files.length && setImgData(files);
   }, []);
