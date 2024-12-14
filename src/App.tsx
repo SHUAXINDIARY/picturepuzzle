@@ -25,7 +25,7 @@ function App() {
 
   return (
     <div className="w-screen h-screen flex justify-center items-center overflow-y-hidden overflow-x-scroll">
-      <div className="absolute top-2 left-2 z-50">
+      <div className="absolute top-2 left-2 z-50 flex">
         <Drawer onSave={handleSave} />
       </div>
       <div ref={imgContainer} className="w-full h-full">
