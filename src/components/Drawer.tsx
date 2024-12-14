@@ -1,11 +1,17 @@
-import { useRef } from "react";
+import { memo, useRef, useState } from "react";
 
-const Drawer = (props: {
-  FileList?: File[];
-  onSave?: (Files?: File[]) => void;
-}) => {
+const Drawer = (props: { onSave?: (Files?: File[]) => void }) => {
   const FileRef = useRef(null);
+  const [FileList, setFileList] = useState<File[]>([]);
 
+  const hanldeFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
+    e.target.files?.length &&
+      setFileList((old) => {
+        return [...(e.target.files || []), ...(old || [])];
+      });
+    // @ts-ignore
+    if (FileRef.current) FileRef.current.value = "";
+  };
   return (
     <div className="drawer">
       <input id="my-drawer" type="checkbox" className="drawer-toggle" />
@@ -24,11 +30,7 @@ const Drawer = (props: {
           <li>
             <input
               ref={FileRef}
-              onChange={(e) => {
-                e.target.files && props?.onSave?.([...e.target.files]);
-                // @ts-ignore
-                if (FileRef.current) FileRef.current.value = "";
-              }}
+              onChange={hanldeFiles}
               type="file"
               multiple
               className="file-input file-input-ghost w-full max-w-xs"
@@ -36,15 +38,15 @@ const Drawer = (props: {
           </li>
           <li className="m-2 inline-flex justify-between">
             <div
-              className="btn"
+              className="btn btn-ghost"
               onClick={() => {
-                props?.onSave?.();
+                props?.onSave?.(FileList);
               }}
             >
               生成
             </div>
           </li>
-          {props.FileList!.map((item) => {
+          {FileList!.map((item) => {
             const url = URL.createObjectURL(item);
             return (
               <li key={url} className="m-2">
@@ -58,4 +60,4 @@ const Drawer = (props: {
   );
 };
 
-export default Drawer;
+export default memo(Drawer);
