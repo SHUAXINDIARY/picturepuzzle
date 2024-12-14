@@ -2,3 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+input:focus,
+button:focus,
+a:focus,
+a {
+  outline: none !important;
+}

@@ -1,17 +1,30 @@
-import { memo, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
+import Select, { SelectProps } from "./Select";
+// import { savePngByCanvas } from "../utils";
 
-const Drawer = (props: { onSave?: (Files?: File[]) => void }) => {
+const Drawer = (
+  props: {
+    onSave?: (Files?: File[]) => void;
+    onExport?: () => void;
+  } & SelectProps
+) => {
   const FileRef = useRef(null);
   const [FileList, setFileList] = useState<File[]>([]);
 
   const hanldeFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
-    e.target.files?.length &&
-      setFileList((old) => {
-        return [...(e.target.files || []), ...(old || [])];
-      });
+    setFileList((old) => {
+      return [...(e.target.files || []), ...(old || [])];
+    });
     // @ts-ignore
     if (FileRef.current) FileRef.current.value = "";
   };
+
+  useEffect(() => {
+    if (FileList.length === 0) {
+      props.onSave?.([]);
+    }
+  }, [FileList]);
+
   return (
     <div className="drawer">
       <input id="my-drawer" type="checkbox" className="drawer-toggle" />
@@ -37,15 +50,41 @@ const Drawer = (props: { onSave?: (Files?: File[]) => void }) => {
             />
           </li>
           <li className="m-2 inline-flex justify-between">
-            <div
-              className="btn btn-ghost"
-              onClick={() => {
-                props?.onSave?.(FileList);
-              }}
-            >
-              生成
+            <Select onSetRow={props.onSetRow} />
+          </li>
+          <li className="m-2">
+            <div className="flex justify-center">
+              <div
+                className={`w-1/3 btn btn-ghost ${
+                  FileList.length === 0 && "btn-disabled"
+                }`}
+                onClick={() => {
+                  props?.onSave?.(FileList);
+                }}
+              >
+                生成
+              </div>
+              <div
+                className={`w-1/3 btn btn-error`}
+                onClick={() => {
+                  setFileList([]);
+                }}
+              >
+                清空
+              </div>
             </div>
           </li>
+
+          {/* <li className="m-2 inline-flex justify-between">
+            <div
+              className={`btn btn-ghost ${
+                FileList.length === 0 && "btn-disabled"
+              }`}
+              onClick={props.onExport}
+            >
+              导出结果
+            </div>
+          </li> */}
           {FileList!.map((item) => {
             const url = URL.createObjectURL(item);
             return (
