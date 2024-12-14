@@ -8,4 +8,4 @@
 
 # 技术栈
 
-Vite + React + Cloudflare
+Vite + React + Cloudflare + [daisyui](https://daisyui.com/components/)

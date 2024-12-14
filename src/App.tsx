@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import Drawer from "./components/Drawer.tsx";
+// @ts-ignore
 import "./libary/packery.js";
-import Drawer from "./components/Drawer.js";
 
 function App() {
   const imgContainer = useRef(null);
@@ -17,14 +18,14 @@ function App() {
       }, 1000);
     }
   }, [ImgData]);
-  
+
   const handleSave = useCallback((files?: File[]) => {
     files && files.length && setImgData(files);
   }, []);
 
   return (
     <div className="w-screen h-screen flex justify-center items-center overflow-y-hidden overflow-x-scroll">
-      <div className="absolute top-2 left-2 z-50">
+      <div className="absolute top-2 left-2 z-50 flex">
         <Drawer onSave={handleSave} />
       </div>
       <div ref={imgContainer} className="w-full h-full">

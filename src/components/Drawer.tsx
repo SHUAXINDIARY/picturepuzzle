@@ -17,7 +17,7 @@ const Drawer = (props: { onSave?: (Files?: File[]) => void }) => {
       <input id="my-drawer" type="checkbox" className="drawer-toggle" />
       <div className="drawer-content">
         <label htmlFor="my-drawer" className="btn btn-ghost drawer-button">
-          上传图片
+          选择图片
         </label>
       </div>
       <div className="drawer-side">
