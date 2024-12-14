@@ -31,7 +31,7 @@ function App() {
   }, [ImgData, RowVal]);
 
   const handleSave = useCallback((files?: File[]) => {
-    files && files.length && setImgData(files);
+    files && setImgData(files);
   }, []);
 
   const hanldeExport = useCallback(() => {
