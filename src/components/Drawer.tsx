@@ -1,6 +1,13 @@
 import { memo, useRef, useState } from "react";
+import Select, { SelectProps } from "./Select";
+// import { savePngByCanvas } from "../utils";
 
-const Drawer = (props: { onSave?: (Files?: File[]) => void }) => {
+const Drawer = (
+  props: {
+    onSave?: (Files?: File[]) => void;
+    onExport?: () => void;
+  } & SelectProps
+) => {
   const FileRef = useRef(null);
   const [FileList, setFileList] = useState<File[]>([]);
 
@@ -37,8 +44,13 @@ const Drawer = (props: { onSave?: (Files?: File[]) => void }) => {
             />
           </li>
           <li className="m-2 inline-flex justify-between">
+            <Select onSetRow={props.onSetRow} />
+          </li>
+          <li className="m-2 inline-flex justify-between">
             <div
-              className="btn btn-ghost"
+              className={`btn btn-ghost ${
+                FileList.length === 0 && "btn-disabled"
+              }`}
               onClick={() => {
                 props?.onSave?.(FileList);
               }}
@@ -46,6 +58,17 @@ const Drawer = (props: { onSave?: (Files?: File[]) => void }) => {
               生成
             </div>
           </li>
+
+          {/* <li className="m-2 inline-flex justify-between">
+            <div
+              className={`btn btn-ghost ${
+                FileList.length === 0 && "btn-disabled"
+              }`}
+              onClick={props.onExport}
+            >
+              导出结果
+            </div>
+          </li> */}
           {FileList!.map((item) => {
             const url = URL.createObjectURL(item);
             return (

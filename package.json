@@ -12,12 +12,17 @@
   "dependencies": {
     "@vitejs/plugin-legacy": "^6.0.0",
     "autoprefixer": "^10.4.20",
+    "dom-to-image": "^2.6.0",
+    "file-saver": "^2.0.5",
     "postcss": "^8.4.49",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "ua-parser-js": "^2.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.15.0",
+    "@types/dom-to-image": "^2.6.7",
+    "@types/file-saver": "^2.0.7",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react-swc": "^3.5.0",
