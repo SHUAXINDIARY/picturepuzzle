@@ -1,5 +1,6 @@
-import { memo, useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import Select, { SelectProps } from "./Select";
+import Dropdown from "./Dropdown";
 // import { savePngByCanvas } from "../utils";
 
 const Drawer = (
@@ -24,6 +25,12 @@ const Drawer = (
       props.onSave?.([]);
     }
   }, [FileList]);
+
+  const handleDel = useCallback((item: File) => {
+    setFileList((old) => {
+      return old.filter((oldItem) => oldItem !== item);
+    });
+  }, []);
 
   return (
     <div className="drawer">
@@ -55,7 +62,7 @@ const Drawer = (
           <li className="m-2">
             <div className="flex justify-center">
               <div
-                className={`w-1/3 btn btn-ghost ${
+                className={`w-1/3 btn btn-primary ${
                   FileList.length === 0 && "btn-disabled"
                 }`}
                 onClick={() => {
@@ -65,7 +72,9 @@ const Drawer = (
                 生成
               </div>
               <div
-                className={`w-1/3 btn btn-error`}
+                className={`w-1/3 btn btn-error ${
+                  FileList.length === 0 && "btn-disabled"
+                }`}
                 onClick={() => {
                   setFileList([]);
                 }}
@@ -89,7 +98,10 @@ const Drawer = (
             const url = URL.createObjectURL(item);
             return (
               <li key={url} className="m-2">
-                <img src={url} />
+                <Dropdown
+                  dom={<img src={url} />}
+                  onDel={() => handleDel(item)}
+                />
               </li>
             );
           })}
