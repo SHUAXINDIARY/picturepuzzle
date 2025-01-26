@@ -26,8 +26,11 @@ export const isApple = () => {
   );
 };
 
-export const savePngByCanvas = async (isDown = false, domElement: Node) => {
-  const svgString = await domtoimage.toSvg(domElement, {});
+export const savePngByCanvas = async (isDown = false, domElement: Node, width?: number, height?: number) => {
+  const svgString = await domtoimage.toSvg(domElement, {
+    // width,
+    // height
+  });
 
   return new Promise((res, rej) => {
     // 超采样倍率

@@ -21,11 +21,12 @@ function App() {
     if (imgContainer.current && ImgData.length) {
       setTimeout(() => {
         // @ts-ignore
-        new Packery(imgContainer.current, {
+        const obj = new Packery(imgContainer.current, {
           itemSelector: ".imgItem",
           horizontal: true,
           resize: true,
         });
+        console.log(obj);
       }, 1000);
     }
   }, [ImgData, RowVal]);
@@ -34,30 +35,38 @@ function App() {
     files && setImgData(files);
   }, []);
 
-  const hanldeExport = useCallback(() => {
+  const hanldeExport = () => {
     // @ts-ignore
+    // 关闭弹窗
     document.querySelector("#my-drawer").click();
+    // 开始下载
     setTimeout(() => {
       try {
-        savePngByCanvas(true, imgContainer.current!);
+        const targetDom = document.querySelector("#imgContainer")!;
+        // const width = targetDom?.style?.width?.split?.("px")?.[0];
+        // const height = targetDom?.style?.height?.split?.("px")?.[0];
+        // console.log("调试width", width);
+        savePngByCanvas(
+          true,
+          // document.querySelector("#imgContainer")!
+          imgContainer.current!
+          // Number(width || 0),
+          // Number(height || 0)
+        );
       } catch (error) {
         console.log(error);
       }
     }, 1000);
-  }, []);
+  };
 
   const handleSetRow = useCallback((val?: number) => {
     val && val > 0 && setRowVal(val);
   }, []);
 
-  useEffect(() => {
-    console.log("调试行数", RowVal);
-  }, [RowVal]);
-
   return (
     <div
-      id="imgList"
-      className="h-screen flex justify-center items-center overflow-y-hidden"
+    // id="imgList"
+    // className="h-screen overflow-y-hidden w-auto"
     >
       <div className="absolute top-2 left-2 z-50 flex">
         <Drawer
@@ -66,7 +75,12 @@ function App() {
           onSetRow={handleSetRow}
         />
       </div>
-      <div ref={imgContainer} className="w-full h-full">
+      <div
+        ref={imgContainer}
+        id="imgContainer"
+        className="w-full h-screen overflow-y-hidden 
+      "
+      >
         {ImgData.length
           ? ImgData.map((item) => {
               const url =

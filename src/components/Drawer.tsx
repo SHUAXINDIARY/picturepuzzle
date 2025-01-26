@@ -84,7 +84,7 @@ const Drawer = (
             </div>
           </li>
 
-          {/* <li className="m-2 inline-flex justify-between">
+          <li className="m-2 inline-flex justify-between">
             <div
               className={`btn btn-ghost ${
                 FileList.length === 0 && "btn-disabled"
@@ -93,7 +93,7 @@ const Drawer = (
             >
               导出结果
             </div>
-          </li> */}
+          </li>
           {FileList!.map((item) => {
             const url = URL.createObjectURL(item);
             return (
