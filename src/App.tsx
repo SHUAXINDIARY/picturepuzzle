@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Drawer from "./components/Drawer.tsx";
 // @ts-ignore
-import "./libary/packery.js";
+import * as Packery from "packery";
 import { savePngByCanvas } from "./utils/index.ts";
 
 const H_MAP = {
