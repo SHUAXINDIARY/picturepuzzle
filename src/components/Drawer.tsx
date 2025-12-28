@@ -1,26 +1,26 @@
-import { memo, useEffect, useRef, useState } from "react";
+import { memo, useRef, useState } from "react";
 
 const Drawer = (props: {
-    onSave?: (Files?: File[]) => void;
+    onSave?: (Files?: File[], shouldGenerate?: boolean) => void;
     onExport?: () => void;
+    onClear?: () => void;
 }) => {
     const FileRef = useRef(null);
     const [FileList, setFileList] = useState<File[]>([]);
 
     const hanldeFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setFileList((old) => {
-            return [...(e.target.files || []), ...(old || [])];
-        });
+        const newFiles = Array.from(e.target.files || []);
+        if (newFiles.length > 0) {
+            // 将新选择的文件累积到 Drawer 的列表中（用于预览）
+            setFileList((old) => [...(old || []), ...newFiles]);
+            // 自动累积到 App 中，但不触发生成
+            props?.onSave?.(newFiles, false);
+        }
         // @ts-ignore
         if (FileRef.current) FileRef.current.value = "";
     };
 
-    useEffect(() => {
-        if (FileList.length === 0) {
-            console.log("文件列表为空，清空图片");
-            props.onSave?.([]);
-        }
-    }, [FileList, props]);
+    // 移除自动清空逻辑，由用户手动点击清空按钮来控制
 
     return (
         <div className="drawer">
@@ -52,17 +52,11 @@ const Drawer = (props: {
                     <li className="m-2">
                         <div className="flex justify-center">
                             <div
-                                className={`w-1/3 btn btn-ghost ${
-                                    FileList.length === 0 && "btn-disabled"
-                                }`}
+                                className="w-1/3 btn btn-ghost"
                                 onClick={() => {
-                                    console.log(
-                                        "点击生成按钮，文件数量:",
-                                        FileList.length
-                                    );
-                                    if (FileList.length > 0) {
-                                        props?.onSave?.(FileList);
-                                    }
+                                    console.log("点击生成按钮");
+                                    // 触发布局计算
+                                    props?.onSave?.([], true);
                                 }}
                             >
                                 生成
@@ -71,6 +65,7 @@ const Drawer = (props: {
                                 className={`w-1/3 btn btn-error`}
                                 onClick={() => {
                                     setFileList([]);
+                                    props?.onClear?.();
                                 }}
                             >
                                 清空

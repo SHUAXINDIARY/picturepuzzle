@@ -20,6 +20,7 @@ function App() {
         Map<string, { width: number; height: number }>
     >(new Map());
     const imageUrlsRef = useRef<Map<File, string>>(new Map());
+    const [shouldCalculateLayout, setShouldCalculateLayout] = useState(false);
 
     // 为文件生成稳定的 URL
     const getImageUrl = useCallback((file: File): string => {
@@ -80,11 +81,13 @@ function App() {
     // 计算图片布局
     useEffect(() => {
         if (
+            !shouldCalculateLayout ||
             containerSize.height === 0 ||
             containerSize.width === 0 ||
             ImgData.length === 0
         ) {
-            console.log("容器尺寸或图片数据为空", {
+            console.log("布局计算条件不满足", {
+                shouldCalculateLayout,
                 containerSize,
                 imgCount: ImgData.length,
             });
@@ -289,19 +292,60 @@ function App() {
             offsetY.toFixed(2)
         );
         setImageLayouts(layouts);
-    }, [ImgData, containerSize, imagesLoaded, getImageUrl]);
+        setShouldCalculateLayout(false); // 计算完成后重置标志
+    }, [ImgData, containerSize, imagesLoaded, getImageUrl, shouldCalculateLayout]);
 
-    const handleSave = useCallback((files?: File[]) => {
+    const handleSave = useCallback((files?: File[], shouldGenerate?: boolean) => {
         if (files && files.length > 0) {
-            console.log("接收到文件:", files.length);
-            // 清理旧的 URL
-            imageUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
-            imageUrlsRef.current.clear();
-
-            setImgData(files);
-            setImagesLoaded(new Map());
-            setImageLayouts([]);
+            console.log("接收到新文件:", files.length);
+            
+            // 将新文件累积到现有文件列表中
+            setImgData((prevFiles) => {
+                // 创建文件唯一标识（名称+大小+修改时间）来去重
+                const existingKeys = new Set(
+                    prevFiles.map(
+                        (f) => `${f.name}-${f.size}-${f.lastModified}`
+                    )
+                );
+                
+                // 过滤掉已存在的文件
+                const newFiles = files.filter(
+                    (f) =>
+                        !existingKeys.has(
+                            `${f.name}-${f.size}-${f.lastModified}`
+                        )
+                );
+                
+                if (newFiles.length > 0) {
+                    console.log("添加新文件:", newFiles.length, "总文件数:", prevFiles.length + newFiles.length);
+                    return [...prevFiles, ...newFiles];
+                } else {
+                    console.log("所有文件已存在，未添加新文件");
+                    return prevFiles;
+                }
+            });
         }
+        
+        // 只有点击生成按钮时才触发布局计算
+        if (shouldGenerate) {
+            console.log("触发布局计算");
+            // 不重置 imagesLoaded，保留已加载的图片信息
+            setImageLayouts([]); // 清空现有布局
+            setShouldCalculateLayout(true); // 设置标志，允许计算布局
+        }
+    }, []);
+
+    // 清空所有文件
+    const handleClear = useCallback(() => {
+        console.log("清空所有文件");
+        // 清理所有 URL
+        imageUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+        imageUrlsRef.current.clear();
+        
+        setImgData([]);
+        setImagesLoaded(new Map());
+        setImageLayouts([]);
+        setShouldCalculateLayout(false);
     }, []);
 
     const handleImageLoad = useCallback(
@@ -344,7 +388,11 @@ function App() {
             style={{ padding: 0, margin: 0 }}
         >
             <div className="absolute top-2 left-2 z-50 flex">
-                <Drawer onSave={handleSave} onExport={hanldeExport} />
+                <Drawer
+                    onSave={handleSave}
+                    onExport={hanldeExport}
+                    onClear={handleClear}
+                />
             </div>
             <div
                 ref={imgContainer}
@@ -359,44 +407,65 @@ function App() {
                 {ImgData.length === 0 ? (
                     <Modal />
                 ) : (
-                    ImgData.map((item, index) => {
-                        const url =
-                            typeof item === "string"
-                                ? item
-                                : getImageUrl(item);
-
-                        const layout = imageLayouts.find(
-                            (l) => l.url === url
-                        );
-
-                        return (
-                            <img
-                                src={url}
-                                key={`${index}-${url}`}
-                                className="imgItem"
-                                onLoad={(e) =>
-                                    handleImageLoad(url, e.currentTarget)
-                                }
-                                style={{
-                                    position: "absolute",
-                                    left: layout ? `${layout.x}px` : 0,
-                                    top: layout ? `${layout.y}px` : 0,
-                                    width: layout
-                                        ? `${layout.width}px`
-                                        : "auto",
-                                    height: layout
-                                        ? `${layout.height}px`
-                                        : "auto",
-                                    maxWidth: "none",
-                                    maxHeight: "none",
-                                    margin: 0,
-                                    padding: 0,
-                                    objectFit: "contain",
-                                    display: layout ? "block" : "none",
-                                }}
-                            />
-                        );
-                    })
+                    <>
+                        {/* 隐藏的图片用于预加载 */}
+                        {ImgData.map((item, index) => {
+                            const url =
+                                typeof item === "string"
+                                    ? item
+                                    : getImageUrl(item);
+                            
+                            // 如果图片还没有布局信息，渲染隐藏的图片来触发加载
+                            const layout = imageLayouts.find(
+                                (l) => l.url === url
+                            );
+                            
+                            if (!layout) {
+                                return (
+                                    <img
+                                        src={url}
+                                        key={`preload-${index}-${url}`}
+                                        onLoad={(e) =>
+                                            handleImageLoad(url, e.currentTarget)
+                                        }
+                                        style={{
+                                            position: "absolute",
+                                            opacity: 0,
+                                            pointerEvents: "none",
+                                            width: "1px",
+                                            height: "1px",
+                                        }}
+                                    />
+                                );
+                            }
+                            
+                            return null;
+                        })}
+                        
+                        {/* 实际显示的图片 */}
+                        {imageLayouts.map((layout, index) => {
+                            return (
+                                <img
+                                    src={layout.url}
+                                    key={`display-${index}-${layout.url}`}
+                                    className="imgItem"
+                                    style={{
+                                        position: "absolute",
+                                        left: `${layout.x}px`,
+                                        top: `${layout.y}px`,
+                                        width: `${layout.width}px`,
+                                        height: `${layout.height}px`,
+                                        maxWidth: "none",
+                                        maxHeight: "none",
+                                        margin: 0,
+                                        padding: 0,
+                                        objectFit: "contain",
+                                        display: "block",
+                                    }}
+                                />
+                            );
+                        })}
+                    </>
                 )}
             </div>
         </div>
