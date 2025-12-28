@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Drawer from "./components/Drawer.tsx";
+import Modal from "./components/Modal.tsx";
 import { savePngByCanvas } from "./utils/index.ts";
 
 interface ImageLayout {
@@ -355,46 +356,48 @@ function App() {
                     boxSizing: "border-box",
                 }}
             >
-                {ImgData.length
-                    ? ImgData.map((item, index) => {
-                          const url =
-                              typeof item === "string"
-                                  ? item
-                                  : getImageUrl(item);
+                {ImgData.length === 0 ? (
+                    <Modal />
+                ) : (
+                    ImgData.map((item, index) => {
+                        const url =
+                            typeof item === "string"
+                                ? item
+                                : getImageUrl(item);
 
-                          const layout = imageLayouts.find(
-                              (l) => l.url === url
-                          );
+                        const layout = imageLayouts.find(
+                            (l) => l.url === url
+                        );
 
-                          return (
-                              <img
-                                  src={url}
-                                  key={`${index}-${url}`}
-                                  className="imgItem"
-                                  onLoad={(e) =>
-                                      handleImageLoad(url, e.currentTarget)
-                                  }
-                                  style={{
-                                      position: "absolute",
-                                      left: layout ? `${layout.x}px` : 0,
-                                      top: layout ? `${layout.y}px` : 0,
-                                      width: layout
-                                          ? `${layout.width}px`
-                                          : "auto",
-                                      height: layout
-                                          ? `${layout.height}px`
-                                          : "auto",
-                                      maxWidth: "none",
-                                      maxHeight: "none",
-                                      margin: 0,
-                                      padding: 0,
-                                      objectFit: "contain",
-                                      display: layout ? "block" : "none",
-                                  }}
-                              />
-                          );
-                      })
-                    : ""}
+                        return (
+                            <img
+                                src={url}
+                                key={`${index}-${url}`}
+                                className="imgItem"
+                                onLoad={(e) =>
+                                    handleImageLoad(url, e.currentTarget)
+                                }
+                                style={{
+                                    position: "absolute",
+                                    left: layout ? `${layout.x}px` : 0,
+                                    top: layout ? `${layout.y}px` : 0,
+                                    width: layout
+                                        ? `${layout.width}px`
+                                        : "auto",
+                                    height: layout
+                                        ? `${layout.height}px`
+                                        : "auto",
+                                    maxWidth: "none",
+                                    maxHeight: "none",
+                                    margin: 0,
+                                    padding: 0,
+                                    objectFit: "contain",
+                                    display: layout ? "block" : "none",
+                                }}
+                            />
+                        );
+                    })
+                )}
             </div>
         </div>
     );
