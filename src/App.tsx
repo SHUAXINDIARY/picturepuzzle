@@ -21,6 +21,7 @@ function App() {
     >(new Map());
     const imageUrlsRef = useRef<Map<File, string>>(new Map());
     const [shouldCalculateLayout, setShouldCalculateLayout] = useState(false);
+    const [isGenerating, setIsGenerating] = useState(false);
 
     // 为文件生成稳定的 URL
     const getImageUrl = useCallback((file: File): string => {
@@ -91,6 +92,7 @@ function App() {
                 containerSize,
                 imgCount: ImgData.length,
             });
+            setIsGenerating(false);
             return;
         }
 
@@ -100,10 +102,12 @@ function App() {
                 loaded: imagesLoaded.size,
                 total: ImgData.length,
             });
+            setIsGenerating(true);
             return;
         }
 
         console.log("开始计算布局");
+        setIsGenerating(true);
 
         const urls = ImgData.map((item) =>
             typeof item === "string" ? item : getImageUrl(item)
@@ -293,47 +297,62 @@ function App() {
         );
         setImageLayouts(layouts);
         setShouldCalculateLayout(false); // 计算完成后重置标志
-    }, [ImgData, containerSize, imagesLoaded, getImageUrl, shouldCalculateLayout]);
+        setIsGenerating(false); // 隐藏 loading
+    }, [
+        ImgData,
+        containerSize,
+        imagesLoaded,
+        getImageUrl,
+        shouldCalculateLayout,
+    ]);
 
-    const handleSave = useCallback((files?: File[], shouldGenerate?: boolean) => {
-        if (files && files.length > 0) {
-            console.log("接收到新文件:", files.length);
-            
-            // 将新文件累积到现有文件列表中
-            setImgData((prevFiles) => {
-                // 创建文件唯一标识（名称+大小+修改时间）来去重
-                const existingKeys = new Set(
-                    prevFiles.map(
-                        (f) => `${f.name}-${f.size}-${f.lastModified}`
-                    )
-                );
-                
-                // 过滤掉已存在的文件
-                const newFiles = files.filter(
-                    (f) =>
-                        !existingKeys.has(
-                            `${f.name}-${f.size}-${f.lastModified}`
+    const handleSave = useCallback(
+        (files?: File[], shouldGenerate?: boolean) => {
+            if (files && files.length > 0) {
+                console.log("接收到新文件:", files.length);
+
+                // 将新文件累积到现有文件列表中
+                setImgData((prevFiles) => {
+                    // 创建文件唯一标识（名称+大小+修改时间）来去重
+                    const existingKeys = new Set(
+                        prevFiles.map(
+                            (f) => `${f.name}-${f.size}-${f.lastModified}`
                         )
-                );
-                
-                if (newFiles.length > 0) {
-                    console.log("添加新文件:", newFiles.length, "总文件数:", prevFiles.length + newFiles.length);
-                    return [...prevFiles, ...newFiles];
-                } else {
-                    console.log("所有文件已存在，未添加新文件");
-                    return prevFiles;
-                }
-            });
-        }
-        
-        // 只有点击生成按钮时才触发布局计算
-        if (shouldGenerate) {
-            console.log("触发布局计算");
-            // 不重置 imagesLoaded，保留已加载的图片信息
-            setImageLayouts([]); // 清空现有布局
-            setShouldCalculateLayout(true); // 设置标志，允许计算布局
-        }
-    }, []);
+                    );
+
+                    // 过滤掉已存在的文件
+                    const newFiles = files.filter(
+                        (f) =>
+                            !existingKeys.has(
+                                `${f.name}-${f.size}-${f.lastModified}`
+                            )
+                    );
+
+                    if (newFiles.length > 0) {
+                        console.log(
+                            "添加新文件:",
+                            newFiles.length,
+                            "总文件数:",
+                            prevFiles.length + newFiles.length
+                        );
+                        return [...prevFiles, ...newFiles];
+                    } else {
+                        console.log("所有文件已存在，未添加新文件");
+                        return prevFiles;
+                    }
+                });
+            }
+
+            // 只有点击生成按钮时才触发布局计算
+            if (shouldGenerate) {
+                console.log("触发布局计算");
+                // 不重置 imagesLoaded，保留已加载的图片信息
+                setImageLayouts([]); // 清空现有布局
+                setShouldCalculateLayout(true); // 设置标志，允许计算布局
+            }
+        },
+        []
+    );
 
     // 清空所有文件
     const handleClear = useCallback(() => {
@@ -341,12 +360,46 @@ function App() {
         // 清理所有 URL
         imageUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
         imageUrlsRef.current.clear();
-        
+
         setImgData([]);
         setImagesLoaded(new Map());
         setImageLayouts([]);
         setShouldCalculateLayout(false);
+        setIsGenerating(false);
     }, []);
+
+    // 删除单个文件
+    const handleDelete = useCallback(
+        (fileToDelete: File) => {
+            console.log("删除文件:", fileToDelete.name);
+            // 清理该文件的 URL
+            const url = imageUrlsRef.current.get(fileToDelete);
+            if (url) {
+                URL.revokeObjectURL(url);
+                imageUrlsRef.current.delete(fileToDelete);
+            }
+
+            // 从文件列表中移除
+            setImgData((prevFiles) =>
+                prevFiles.filter((file) => file !== fileToDelete)
+            );
+
+            // 从已加载图片中移除
+            if (url) {
+                setImagesLoaded((prev) => {
+                    const newMap = new Map(prev);
+                    newMap.delete(url);
+                    return newMap;
+                });
+            }
+
+            // 从布局中移除
+            setImageLayouts((prevLayouts) =>
+                prevLayouts.filter((layout) => layout.url !== url)
+            );
+        },
+        []
+    );
 
     const handleImageLoad = useCallback(
         (url: string, img: HTMLImageElement) => {
@@ -392,6 +445,7 @@ function App() {
                     onSave={handleSave}
                     onExport={hanldeExport}
                     onClear={handleClear}
+                    onDelete={handleDelete}
                 />
             </div>
             <div
@@ -404,6 +458,15 @@ function App() {
                     boxSizing: "border-box",
                 }}
             >
+                {/* Loading 动画 */}
+                {isGenerating && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-base-100 bg-opacity-80 z-50">
+                        <div className="flex flex-col items-center gap-4">
+                            <span className="loading loading-spinner loading-lg text-primary"></span>
+                            <p className="text-base-content">正在生成布局...</p>
+                        </div>
+                    </div>
+                )}
                 {ImgData.length === 0 ? (
                     <Modal />
                 ) : (
@@ -414,19 +477,22 @@ function App() {
                                 typeof item === "string"
                                     ? item
                                     : getImageUrl(item);
-                            
+
                             // 如果图片还没有布局信息，渲染隐藏的图片来触发加载
                             const layout = imageLayouts.find(
                                 (l) => l.url === url
                             );
-                            
+
                             if (!layout) {
                                 return (
                                     <img
                                         src={url}
                                         key={`preload-${index}-${url}`}
                                         onLoad={(e) =>
-                                            handleImageLoad(url, e.currentTarget)
+                                            handleImageLoad(
+                                                url,
+                                                e.currentTarget
+                                            )
                                         }
                                         style={{
                                             position: "absolute",
@@ -438,10 +504,10 @@ function App() {
                                     />
                                 );
                             }
-                            
+
                             return null;
                         })}
-                        
+
                         {/* 实际显示的图片 */}
                         {imageLayouts.map((layout, index) => {
                             return (

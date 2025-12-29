@@ -1,13 +1,36 @@
-import { memo, useRef, useState } from "react";
+import { memo, useRef, useState, useEffect } from "react";
 
 const Drawer = (props: {
     onSave?: (Files?: File[], shouldGenerate?: boolean) => void;
     onExport?: () => void;
     onClear?: () => void;
+    onDelete?: (file: File) => void;
 }) => {
     const FileRef = useRef(null);
     const [FileList, setFileList] = useState<File[]>([]);
     const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [fileToDelete, setFileToDelete] = useState<File | null>(null);
+    const fileUrlsRef = useRef<Map<File, string>>(new Map());
+
+    // 为文件生成稳定的 URL
+    const getFileUrl = (file: File): string => {
+        if (!fileUrlsRef.current.has(file)) {
+            const url = URL.createObjectURL(file);
+            fileUrlsRef.current.set(file, url);
+        }
+        return fileUrlsRef.current.get(file)!;
+    };
+
+    // 清理已删除文件的 URL
+    useEffect(() => {
+        const currentFiles = new Set(FileList);
+        fileUrlsRef.current.forEach((url, file) => {
+            if (!currentFiles.has(file)) {
+                URL.revokeObjectURL(url);
+                fileUrlsRef.current.delete(file);
+            }
+        });
+    }, [FileList]);
 
     const hanldeFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newFiles = Array.from(e.target.files || []);
@@ -73,10 +96,21 @@ const Drawer = (props: {
                         </div>
                     </li>
                     {FileList!.map((item) => {
-                        const url = URL.createObjectURL(item);
+                        const url = getFileUrl(item);
                         return (
-                            <li key={url} className="m-2">
-                                <img src={url} />
+                            <li key={url} className="m-2 relative group">
+                                <img
+                                    src={url}
+                                    className="cursor-pointer hover:opacity-80 transition-opacity"
+                                    onClick={() => {
+                                        setFileToDelete(item);
+                                    }}
+                                />
+                                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
+                                    <span className="text-white text-sm font-bold">
+                                        点击删除
+                                    </span>
+                                </div>
                             </li>
                         );
                     })}
@@ -86,7 +120,9 @@ const Drawer = (props: {
             <div className={`modal ${showConfirmModal ? "modal-open" : ""}`}>
                 <div className="modal-box">
                     <h3 className="font-bold text-lg">确认清空</h3>
-                    <p className="py-4">确定要清空所有图片吗？此操作不可恢复。</p>
+                    <p className="py-4">
+                        确定要清空所有图片吗？此操作不可恢复。
+                    </p>
                     <div className="modal-action">
                         <button
                             className="btn btn-error"
@@ -102,6 +138,60 @@ const Drawer = (props: {
                             className="btn btn-ghost"
                             onClick={() => {
                                 setShowConfirmModal(false);
+                            }}
+                        >
+                            取消
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {/* 确认删除对话框 */}
+            <div
+                className={`modal ${fileToDelete ? "modal-open" : ""}`}
+                onClick={() => {
+                    setFileToDelete(null);
+                }}
+            >
+                <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+                    <h3 className="font-bold text-lg">确认删除</h3>
+                    <p className="py-4">
+                        确定要删除这张图片吗？此操作不可恢复。
+                    </p>
+                    {fileToDelete && (
+                        <div className="mb-4">
+                            <img
+                                src={getFileUrl(fileToDelete)}
+                                className="max-w-full max-h-48 mx-auto rounded"
+                                alt="预览"
+                            />
+                            <p className="text-sm text-base-content/70 mt-2 text-center">
+                                {fileToDelete.name}
+                            </p>
+                        </div>
+                    )}
+                    <div className="modal-action">
+                        <button
+                            className="btn btn-error"
+                            onClick={() => {
+                                if (fileToDelete) {
+                                    // 从列表中移除
+                                    setFileList((prev) =>
+                                        prev.filter(
+                                            (file) => file !== fileToDelete
+                                        )
+                                    );
+                                    // 通知父组件
+                                    props?.onDelete?.(fileToDelete);
+                                    setFileToDelete(null);
+                                }
+                            }}
+                        >
+                            确认
+                        </button>
+                        <button
+                            className="btn btn-ghost"
+                            onClick={() => {
+                                setFileToDelete(null);
                             }}
                         >
                             取消
