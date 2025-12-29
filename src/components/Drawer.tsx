@@ -7,6 +7,7 @@ const Drawer = (props: {
 }) => {
     const FileRef = useRef(null);
     const [FileList, setFileList] = useState<File[]>([]);
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
 
     const hanldeFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newFiles = Array.from(e.target.files || []);
@@ -52,6 +53,14 @@ const Drawer = (props: {
                     <li className="m-2">
                         <div className="flex justify-center">
                             <div
+                                className={`w-1/3 btn btn-error`}
+                                onClick={() => {
+                                    setShowConfirmModal(true);
+                                }}
+                            >
+                                清空
+                            </div>
+                            <div
                                 className="w-1/3 btn btn-ghost"
                                 onClick={() => {
                                     console.log("点击生成按钮");
@@ -61,28 +70,8 @@ const Drawer = (props: {
                             >
                                 生成
                             </div>
-                            <div
-                                className={`w-1/3 btn btn-error`}
-                                onClick={() => {
-                                    setFileList([]);
-                                    props?.onClear?.();
-                                }}
-                            >
-                                清空
-                            </div>
                         </div>
                     </li>
-
-                    {/* <li className="m-2 inline-flex justify-between">
-            <div
-              className={`btn btn-ghost ${
-                FileList.length === 0 && "btn-disabled"
-              }`}
-              onClick={props.onExport}
-            >
-              导出结果
-            </div>
-          </li> */}
                     {FileList!.map((item) => {
                         const url = URL.createObjectURL(item);
                         return (
@@ -92,6 +81,33 @@ const Drawer = (props: {
                         );
                     })}
                 </ul>
+            </div>
+            {/* 确认清空对话框 */}
+            <div className={`modal ${showConfirmModal ? "modal-open" : ""}`}>
+                <div className="modal-box">
+                    <h3 className="font-bold text-lg">确认清空</h3>
+                    <p className="py-4">确定要清空所有图片吗？此操作不可恢复。</p>
+                    <div className="modal-action">
+                        <button
+                            className="btn btn-error"
+                            onClick={() => {
+                                setFileList([]);
+                                props?.onClear?.();
+                                setShowConfirmModal(false);
+                            }}
+                        >
+                            确认
+                        </button>
+                        <button
+                            className="btn btn-ghost"
+                            onClick={() => {
+                                setShowConfirmModal(false);
+                            }}
+                        >
+                            取消
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     );
