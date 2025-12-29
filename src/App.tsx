@@ -23,6 +23,7 @@ function App() {
     const imageUrlsRef = useRef<Map<File, string>>(new Map());
     const [shouldCalculateLayout, setShouldCalculateLayout] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
+    const [isExporting, setIsExporting] = useState(false);
 
     // 为文件生成稳定的 URL
     const getImageUrl = useCallback((file: File): string => {
@@ -420,7 +421,7 @@ function App() {
         []
     );
 
-    const hanldeExport = useCallback(() => {
+    const hanldeExport = useCallback(async () => {
         // 校验：没有上传图片
         if (ImgData.length === 0) {
             showTip("请先上传图片");
@@ -435,14 +436,19 @@ function App() {
 
         // @ts-ignore
         document.querySelector("#my-drawer").click();
-        setTimeout(() => {
-            try {
-                savePngByCanvas(true, imgContainer.current!);
-            } catch (error) {
-                console.log(error);
-                showTip(`导出失败: ${error}`);
-            }
-        }, 1000);
+        setIsExporting(true);
+
+        // 等待抽屉关闭动画
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
+        try {
+            await savePngByCanvas(true, imgContainer.current!);
+        } catch (error) {
+            console.log(error);
+            showTip(`导出失败: ${error}`);
+        } finally {
+            setIsExporting(false);
+        }
     }, [ImgData.length, imageLayouts.length]);
 
     return (
@@ -475,7 +481,7 @@ function App() {
                     boxSizing: "border-box",
                 }}
             >
-                {/* Loading 动画 */}
+                {/* 生成 Loading 动画 */}
                 {isGenerating && (
                     <div className="absolute inset-0 flex items-center justify-center bg-base-100 bg-opacity-80 z-50">
                         <div className="flex flex-col items-center gap-4">
@@ -551,6 +557,15 @@ function App() {
                     </>
                 )}
             </div>
+            {/* 导出 Loading 动画 - 放在截图区域外部 */}
+            {isExporting && (
+                <div className="fixed inset-0 flex items-center justify-center bg-base-100 bg-opacity-80 z-[100]">
+                    <div className="flex flex-col items-center gap-4">
+                        <span className="loading loading-spinner loading-lg text-primary"></span>
+                        <p className="text-base-content">正在导出图片...</p>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
