@@ -2,7 +2,6 @@ import { memo, useRef, useState, useEffect } from "react";
 
 const Drawer = (props: {
     onSave?: (Files?: File[], shouldGenerate?: boolean) => void;
-    onExport?: () => void;
     onClear?: () => void;
     onDelete?: (file: File) => void;
 }) => {

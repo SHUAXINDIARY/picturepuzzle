@@ -369,37 +369,34 @@ function App() {
     }, []);
 
     // 删除单个文件
-    const handleDelete = useCallback(
-        (fileToDelete: File) => {
-            console.log("删除文件:", fileToDelete.name);
-            // 清理该文件的 URL
-            const url = imageUrlsRef.current.get(fileToDelete);
-            if (url) {
-                URL.revokeObjectURL(url);
-                imageUrlsRef.current.delete(fileToDelete);
-            }
+    const handleDelete = useCallback((fileToDelete: File) => {
+        console.log("删除文件:", fileToDelete.name);
+        // 清理该文件的 URL
+        const url = imageUrlsRef.current.get(fileToDelete);
+        if (url) {
+            URL.revokeObjectURL(url);
+            imageUrlsRef.current.delete(fileToDelete);
+        }
 
-            // 从文件列表中移除
-            setImgData((prevFiles) =>
-                prevFiles.filter((file) => file !== fileToDelete)
-            );
+        // 从文件列表中移除
+        setImgData((prevFiles) =>
+            prevFiles.filter((file) => file !== fileToDelete)
+        );
 
-            // 从已加载图片中移除
-            if (url) {
-                setImagesLoaded((prev) => {
-                    const newMap = new Map(prev);
-                    newMap.delete(url);
-                    return newMap;
-                });
-            }
+        // 从已加载图片中移除
+        if (url) {
+            setImagesLoaded((prev) => {
+                const newMap = new Map(prev);
+                newMap.delete(url);
+                return newMap;
+            });
+        }
 
-            // 从布局中移除
-            setImageLayouts((prevLayouts) =>
-                prevLayouts.filter((layout) => layout.url !== url)
-            );
-        },
-        []
-    );
+        // 从布局中移除
+        setImageLayouts((prevLayouts) =>
+            prevLayouts.filter((layout) => layout.url !== url)
+        );
+    }, []);
 
     const handleImageLoad = useCallback(
         (url: string, img: HTMLImageElement) => {
@@ -443,10 +440,16 @@ function App() {
             <div className="absolute top-2 left-2 z-50 flex">
                 <Drawer
                     onSave={handleSave}
-                    onExport={hanldeExport}
                     onClear={handleClear}
                     onDelete={handleDelete}
                 />
+                <label
+                    htmlFor="my-drawer"
+                    className="btn btn-ghost drawer-button"
+                    onClick={hanldeExport}
+                >
+                    导出
+                </label>
             </div>
             <div
                 ref={imgContainer}
