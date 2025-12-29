@@ -11,6 +11,40 @@ const Drawer = (props: {
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [fileToDelete, setFileToDelete] = useState<File | null>(null);
     const fileUrlsRef = useRef<Map<File, string>>(new Map());
+    const [invalidFiles, setInvalidFiles] = useState<string[]>([]);
+    const [showInvalidModal, setShowInvalidModal] = useState(false);
+
+    // 检查文件是否为图片格式
+    const isImageFile = (file: File): boolean => {
+        // 检查文件扩展名
+        const validExtensions = [
+            ".jpg",
+            ".jpeg",
+            ".png",
+            ".gif",
+            ".webp",
+            ".bmp",
+            ".svg",
+        ];
+
+        const fileName = file.name.toLowerCase();
+        const hasValidExtension = validExtensions.some((ext) =>
+            fileName.endsWith(ext)
+        );
+
+        // 首先检查扩展名，如果扩展名无效直接拒绝
+        if (!hasValidExtension) {
+            return false;
+        }
+
+        // 然后检查 MIME 类型
+        // 如果 MIME 类型存在，必须以 "image/" 开头
+        if (file.type && !file.type.startsWith("image/")) {
+            return false;
+        }
+
+        return true;
+    };
 
     // 为文件生成稳定的 URL
     const getFileUrl = (file: File): string => {
@@ -34,11 +68,36 @@ const Drawer = (props: {
 
     const hanldeFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newFiles = Array.from(e.target.files || []);
+        console.log("选择的文件:", newFiles.map((f) => ({ name: f.name, type: f.type })));
+
         if (newFiles.length > 0) {
-            // 将新选择的文件累积到 Drawer 的列表中（用于预览）
-            setFileList((old) => [...(old || []), ...newFiles]);
-            // 自动累积到 App 中，但不触发生成
-            props?.onSave?.(newFiles, false);
+            // 过滤出有效的图片文件
+            const validImageFiles = newFiles.filter((file) => {
+                const isValid = isImageFile(file);
+                console.log(`文件 ${file.name} (${file.type}): ${isValid ? "有效" : "无效"}`);
+                return isValid;
+            });
+            const invalidImageFiles = newFiles.filter(
+                (file) => !isImageFile(file)
+            );
+
+            console.log("有效文件:", validImageFiles.length, "无效文件:", invalidImageFiles.length);
+
+            // 如果有无效文件，显示提示
+            if (invalidImageFiles.length > 0) {
+                setInvalidFiles(
+                    invalidImageFiles.map((file) => file.name)
+                );
+                setShowInvalidModal(true);
+            }
+
+            // 只处理有效的图片文件
+            if (validImageFiles.length > 0) {
+                // 将新选择的文件累积到 Drawer 的列表中（用于预览）
+                setFileList((old) => [...(old || []), ...validImageFiles]);
+                // 自动累积到 App 中，但不触发生成
+                props?.onSave?.(validImageFiles, false);
+            }
         }
         // @ts-ignore
         if (FileRef.current) FileRef.current.value = "";
@@ -70,6 +129,7 @@ const Drawer = (props: {
                             onChange={hanldeFiles}
                             type="file"
                             multiple
+                            accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,image/bmp,image/svg+xml"
                             className="file-input file-input-ghost w-full max-w-xs"
                         />
                     </li>
@@ -195,6 +255,44 @@ const Drawer = (props: {
                             }}
                         >
                             取消
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {/* 无效文件提示对话框 */}
+            <div
+                className={`modal ${showInvalidModal ? "modal-open" : ""}`}
+                onClick={() => {
+                    setShowInvalidModal(false);
+                    setInvalidFiles([]);
+                }}
+            >
+                <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+                    <h3 className="font-bold text-lg text-warning">文件格式不支持</h3>
+                    <p className="py-4">
+                        以下文件不是图片格式，已自动过滤：
+                    </p>
+                    <div className="mb-4 max-h-48 overflow-y-auto">
+                        <ul className="list-disc list-inside">
+                            {invalidFiles.map((fileName, index) => (
+                                <li key={index} className="text-sm text-base-content/70">
+                                    {fileName}
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                    <p className="text-sm text-base-content/60 mb-4">
+                        支持的格式：JPEG、JPG、PNG、GIF、WebP、BMP、SVG
+                    </p>
+                    <div className="modal-action">
+                        <button
+                            className="btn btn-primary"
+                            onClick={() => {
+                                setShowInvalidModal(false);
+                                setInvalidFiles([]);
+                            }}
+                        >
+                            知道了
                         </button>
                     </div>
                 </div>
