@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Drawer from "./components/Drawer.tsx";
 import Modal from "./components/Modal.tsx";
+import { showTip } from "./utils/tipModal.tsx";
 import { savePngByCanvas } from "./utils/index.ts";
 
 interface ImageLayout {
@@ -22,7 +23,6 @@ function App() {
     const imageUrlsRef = useRef<Map<File, string>>(new Map());
     const [shouldCalculateLayout, setShouldCalculateLayout] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
-    const [exportTip, setExportTip] = useState<string | null>(null);
 
     // 为文件生成稳定的 URL
     const getImageUrl = useCallback((file: File): string => {
@@ -423,13 +423,13 @@ function App() {
     const hanldeExport = useCallback(() => {
         // 校验：没有上传图片
         if (ImgData.length === 0) {
-            setExportTip("请先上传图片");
+            showTip("请先上传图片");
             return;
         }
 
         // 校验：已上传但未生成布局
         if (imageLayouts.length === 0) {
-            setExportTip("请先点击生成按钮");
+            showTip("请先点击生成按钮");
             return;
         }
 
@@ -440,7 +440,7 @@ function App() {
                 savePngByCanvas(true, imgContainer.current!);
             } catch (error) {
                 console.log(error);
-                setExportTip(`导出失败: ${error}`);
+                showTip(`导出失败: ${error}`);
             }
         }, 1000);
     }, [ImgData.length, imageLayouts.length]);
@@ -550,24 +550,6 @@ function App() {
                         })}
                     </>
                 )}
-            </div>
-            {/* 导出提示对话框 */}
-            <div
-                className={`modal ${exportTip ? "modal-open" : ""}`}
-                onClick={() => setExportTip(null)}
-            >
-                <div className="modal-box" onClick={(e) => e.stopPropagation()}>
-                    <h3 className="font-bold text-lg text-warning">提示</h3>
-                    <p className="py-4">{exportTip}</p>
-                    <div className="modal-action">
-                        <button
-                            className="btn btn-primary"
-                            onClick={() => setExportTip(null)}
-                        >
-                            知道了
-                        </button>
-                    </div>
-                </div>
             </div>
         </div>
     );
